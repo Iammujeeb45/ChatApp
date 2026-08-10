@@ -85,13 +85,13 @@ const Header = ({
   return (
     <Flex
       w="full"
-      h="68px"
+      h={{ base: "64px", md: "68px" }}
       bg={headerBg}
       borderBottom="1px solid"
       borderColor={headerBorder}
       align="center"
       justify="space-between"
-      px={4}
+      px={{ base: 3, md: 4 }}
       py={2}
       zIndex="10"
     >
@@ -152,7 +152,7 @@ const Header = ({
       </HStack>
 
       {/* Action Controls & Search */}
-      <HStack spacing={2}>
+      <HStack spacing={2} flex={1} minW={0} justify="flex-end">
         {/* Video Call Button for DMs */}
         {activeRoom?.isDM && (
           <Tooltip label="Start Video Call">
@@ -164,12 +164,13 @@ const Header = ({
               borderRadius="full"
               onClick={onStartVideoCall}
               _hover={{ bg: hoverBg }}
+              display={{ base: "none", sm: "flex" }}
             />
           </Tooltip>
         )}
 
         {/* Search Bar Input */}
-        <InputGroup size="sm" maxW={{ base: "100px", sm: "170px", md: "220px" }}>
+        <InputGroup size="sm" maxW={{ base: "150px", sm: "170px", md: "220px" }} flex={{ base: "1", sm: "unset" }}>
           <InputLeftElement pointerEvents="none">
             <SearchIcon color={subtextColor} />
           </InputLeftElement>
@@ -217,6 +218,7 @@ const Header = ({
             color={subtextColor}
             onClick={onToggleSound}
             _hover={{ bg: hoverBg }}
+            display={{ base: "none", sm: "flex" }}
           />
         </Tooltip>
 
@@ -231,6 +233,7 @@ const Header = ({
             color={subtextColor}
             onClick={toggleColorMode}
             _hover={{ bg: hoverBg }}
+            display={{ base: "none", sm: "flex" }}
           />
         </Tooltip>
 

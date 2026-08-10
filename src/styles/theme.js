@@ -7,17 +7,17 @@ const config = {
 
 const colors = {
   pulse: {
-    // Soothing Night Mode (Eye-friendly for night use)
-    darkAppBg: "#0b0f19",
-    darkHeaderBg: "#1e293b",
-    darkChatBg: "#0f172a",
-    darkInputBg: "#1e293b",
-    darkBorder: "rgba(255, 255, 255, 0.08)",
-    darkIncoming: "#1e293b",
+    // Softer Night Mode for long chat sessions
+    darkAppBg: "#0a1020",
+    darkHeaderBg: "#111827",
+    darkChatBg: "#0d1324",
+    darkInputBg: "#121a2f",
+    darkBorder: "rgba(148, 163, 184, 0.16)",
+    darkIncoming: "#121a2f",
     darkOutgoingGrad: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
     darkAccent: "#3b82f6",
     darkAccentCyan: "#38bdf8",
-    darkText: "#f8fafc",
+    darkText: "#eef2ff",
     darkSubtext: "#94a3b8",
 
     // Soft Warm Light Mode (Gentle on eyes, colorblind accessible WCAG AA)
@@ -37,10 +37,26 @@ const colors = {
 
 const styles = {
   global: (props) => ({
+    html: {
+      height: "100%",
+      overflow: "hidden",
+    },
     body: {
-      bg: props.colorMode === "dark" ? "#0b0f19" : "#e5e9f0",
-      color: props.colorMode === "dark" ? "#f8fafc" : "#0f172a",
+      minHeight: "100%",
+      bg: props.colorMode === "dark" ? "#0a1020" : "#e5e9f0",
+      backgroundImage:
+        props.colorMode === "dark"
+          ? "radial-gradient(circle at top, rgba(37, 99, 235, 0.16), transparent 42%), radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 35%)"
+          : "none",
+      backgroundAttachment: "fixed",
+      color: props.colorMode === "dark" ? "#eef2ff" : "#0f172a",
       fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      overflow: "hidden",
+      overscrollBehavior: "none",
+      WebkitTapHighlightColor: "transparent",
+    },
+    "#root": {
+      height: "100%",
       overflow: "hidden",
     },
   }),

@@ -298,18 +298,12 @@ const ChatInput = ({
       const audioBlob = new Blob(audioChunksRef.current, {
         type: "audio/webm",
       });
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        const base64Audio = reader.result;
-        onSendMediaMessage({
-          mediaUrl: base64Audio,
-          mediaType: "audio",
-          caption: "",
-          mediaName: `voice_note_${Date.now()}.webm`,
-        });
-      };
-      reader.readAsDataURL(audioBlob);
+      onSendMediaMessage({
+        file: audioBlob,
+        mediaType: "audio",
+        caption: "",
+        mediaName: `voice_note_${Date.now()}.webm`,
+      });
 
       // Stop mic tracks
       recorder.stream.getTracks().forEach((track) => track.stop());
@@ -342,27 +336,23 @@ const ChatInput = ({
     setMessage((prev) => prev + emoji);
   };
 
-  // Convert File to Base64 Data URL
+  // Pass files through so App.jsx can compress and upload them to Firebase Storage
   const handleFileSelect = (e, mediaType) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      alert("File size exceeds 15MB limit.");
+    if (file.size > 25 * 1024 * 1024) {
+      alert("File size exceeds 25MB limit.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      onSendMediaMessage({
-        mediaUrl: reader.result,
-        mediaType: mediaType,
-        caption: message.trim(),
-        mediaName: file.name,
-      });
-      setMessage("");
-    };
-    reader.readAsDataURL(file);
+    onSendMediaMessage({
+      file,
+      mediaType: mediaType,
+      caption: message.trim(),
+      mediaName: file.name,
+    });
+    setMessage("");
     e.target.value = "";
   };
 
@@ -506,15 +496,17 @@ const ChatInput = ({
 
       {/* In-Place Live Voice Recording Toolbar */}
       {isRecording ? (
-        <Flex
+      <Flex
           as="div"
           w="full"
-          align="center"
+          direction={{ base: "column", sm: "row" }}
+          align={{ base: "stretch", sm: "center" }}
           justify="space-between"
+          gap={3}
           bg={useColorModeValue("red.50", "rgba(239, 68, 68, 0.15)")}
           border="1.5px solid"
           borderColor="red.400"
-          borderRadius="full"
+          borderRadius={{ base: "24px", sm: "full" }}
           px={5}
           py={2}
           boxShadow="md"
@@ -564,13 +556,15 @@ const ChatInput = ({
           as="form"
           onSubmit={onSendMessage}
           w="full"
-          align="center"
+          direction={{ base: "column", sm: "row" }}
+          align={{ base: "stretch", sm: "center" }}
+          gap={2}
           bg={inputBg}
           border="1px solid"
           borderColor={borderColor}
-          borderRadius="full"
+          borderRadius={{ base: "24px", sm: "full" }}
           px={3}
-          py={1.5}
+          py={2}
           boxShadow="sm"
           _focusWithin={{
             borderColor: "#2563eb",
@@ -590,6 +584,7 @@ const ChatInput = ({
             _hover={{
               bg: useColorModeValue("blackAlpha.50", "whiteAlpha.100"),
             }}
+            alignSelf="flex-start"
           />
 
           {/* Attach Media Menu */}
@@ -605,6 +600,7 @@ const ChatInput = ({
               _hover={{
                 bg: useColorModeValue("blackAlpha.50", "whiteAlpha.100"),
               }}
+              alignSelf="flex-start"
             />
             <MenuList
               bg={useColorModeValue("#ffffff", "#1e293b")}
@@ -643,38 +639,41 @@ const ChatInput = ({
             px={2}
             py={1}
             h="38px"
+            flex={1}
+            minW={0}
+            w="full"
           />
 
-          {message.trim() ? (
-            <IconButton
-              type="submit"
-              aria-label="Send Message"
-              icon={<SendIcon color="white" />}
-              size="sm"
-              borderRadius="full"
-              bgGradient="linear(to-r, #1d4ed8, #2563eb)"
-              color="white"
-              boxShadow="0 4px 12px rgba(37, 99, 235, 0.4)"
-              _hover={{
-                bgGradient: "linear(to-r, #1e40af, #1d4ed8)",
-                transform: "scale(1.05)",
-              }}
-              _active={{ transform: "scale(0.95)" }}
-              transition="all 0.15s ease"
-              ml={1}
-            />
-          ) : (
-            <IconButton
-              aria-label="Record Voice Note"
-              icon={<MicIcon color="#2563eb" />}
-              size="sm"
-              variant="ghost"
-              borderRadius="full"
-              onClick={startRecording}
-              ml={1}
-              _hover={{ bg: useColorModeValue("blue.50", "whiteAlpha.100") }}
-            />
-          )}
+          <HStack spacing={1} alignSelf={{ base: "flex-end", sm: "center" }}>
+            {message.trim() ? (
+              <IconButton
+                type="submit"
+                aria-label="Send Message"
+                icon={<SendIcon color="white" />}
+                size="sm"
+                borderRadius="full"
+                bgGradient="linear(to-r, #1d4ed8, #2563eb)"
+                color="white"
+                boxShadow="0 4px 12px rgba(37, 99, 235, 0.4)"
+                _hover={{
+                  bgGradient: "linear(to-r, #1e40af, #1d4ed8)",
+                  transform: "scale(1.05)",
+                }}
+                _active={{ transform: "scale(0.95)" }}
+                transition="all 0.15s ease"
+              />
+            ) : (
+              <IconButton
+                aria-label="Record Voice Note"
+                icon={<MicIcon color="#2563eb" />}
+                size="sm"
+                variant="ghost"
+                borderRadius="full"
+                onClick={startRecording}
+                _hover={{ bg: useColorModeValue("blue.50", "whiteAlpha.100") }}
+              />
+            )}
+          </HStack>
         </Flex>
       )}
     </Box>

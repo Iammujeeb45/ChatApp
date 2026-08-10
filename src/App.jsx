@@ -55,9 +55,17 @@ import {
   where,
   orderBy,
 } from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  uploadString,
+  getDownloadURL,
+} from "firebase/storage";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Web Audio API pop sound generator
 const playSendSound = () => {
@@ -92,6 +100,112 @@ const signinHandler = () => {
 
 const signOutHandler = () => {
   signOut(auth);
+};
+
+const sanitizeFileName = (name = "media") =>
+  name.replace(/[^a-z0-9._-]+/gi, "_").replace(/_+/g, "_");
+
+const loadImageFromFile = (file) =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url);
+      reject(err);
+    };
+
+    img.src = url;
+  });
+
+const compressImageFile = async (file) => {
+  const image = await loadImageFromFile(file);
+  const maxWidth = 1280;
+  const maxHeight = 1280;
+
+  let { width, height } = image;
+  const scale = Math.min(maxWidth / width, maxHeight / height, 1);
+  width = Math.round(width * scale);
+  height = Math.round(height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Image compression is not supported in this browser.");
+  }
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, 0, 0, width, height);
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (result) resolve(result);
+        else reject(new Error("Unable to compress image."));
+      },
+      "image/jpeg",
+      0.62,
+    );
+  });
+
+  return {
+    blob,
+    contentType: "image/jpeg",
+    extension: "jpg",
+  };
+};
+
+const uploadMediaToStorage = async ({
+  roomId,
+  uid,
+  file,
+  mediaUrl,
+  mediaType,
+  mediaName,
+}) => {
+  const timestamp = Date.now();
+  const safeBaseName = sanitizeFileName(mediaName || `${mediaType}_upload`);
+
+  if (file instanceof File || file instanceof Blob) {
+    if (mediaType === "image") {
+      const { blob, contentType, extension } = await compressImageFile(file);
+      const imageRef = ref(storage, `messages/${roomId}/${uid}/${timestamp}_${safeBaseName.replace(/\.[^.]+$/, "")}.${extension}`);
+      await uploadBytes(imageRef, blob, { contentType });
+      return {
+        url: await getDownloadURL(imageRef),
+        storagePath: imageRef.fullPath,
+      };
+    }
+
+    const fileRef = ref(storage, `messages/${roomId}/${uid}/${timestamp}_${safeBaseName}`);
+    await uploadBytes(fileRef, file, {
+      contentType: file.type || "application/octet-stream",
+    });
+    return {
+      url: await getDownloadURL(fileRef),
+      storagePath: fileRef.fullPath,
+    };
+  }
+
+  if (mediaUrl) {
+    const dataRef = ref(storage, `messages/${roomId}/${uid}/${timestamp}_${safeBaseName}`);
+    await uploadString(dataRef, mediaUrl, "data_url");
+    return {
+      url: await getDownloadURL(dataRef),
+      storagePath: dataRef.fullPath,
+    };
+  }
+
+  throw new Error("No media payload found for upload.");
 };
 
 function App() {
@@ -286,8 +400,14 @@ function App() {
   };
 
   // Send Media Message
-  const sendMediaHandler = async ({ mediaUrl, mediaType, caption = "", mediaName = "" }) => {
-    if (!user || !activeRoom || !mediaUrl) return;
+  const sendMediaHandler = async ({
+    file,
+    mediaUrl,
+    mediaType,
+    caption = "",
+    mediaName = "",
+  }) => {
+    if (!user || !activeRoom) return;
 
     const currentReplyPayload = replyingToMessage;
     setReplyingToMessage(null);
@@ -297,12 +417,22 @@ function App() {
     }
 
     try {
-      await addDoc(collection(db, "Message"), {
-        text: caption || "",
-        caption: caption || "",
+      const uploadedMedia = await uploadMediaToStorage({
+        roomId: activeRoom.id,
+        uid: user.uid,
+        file,
         mediaUrl,
         mediaType,
         mediaName,
+      });
+
+      await addDoc(collection(db, "Message"), {
+        text: caption || "",
+        caption: caption || "",
+        mediaUrl: uploadedMedia.url,
+        mediaType,
+        mediaName,
+        storagePath: uploadedMedia.storagePath,
         uid: user.uid,
         uri: userPhoto,
         displayName: user.displayName || user.email?.split("@")[0] || "User",
@@ -578,12 +708,26 @@ function App() {
         (m.mediaName || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+  useEffect(() => {
+    if (!activeRoom) return;
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
+  }, [activeRoom?.id, filteredVisibleMessages.length]);
+
   if (!user) {
     return <AuthScreen onSignIn={signinHandler} />;
   }
 
   return (
-    <Flex h="100vh" w="100vw" bg={appBg} justify="center" align="center" p={{ base: 0, md: 4 }}>
+    <Flex
+      minH="100dvh"
+      w="100vw"
+      bg={appBg}
+      justify="stretch"
+      align="stretch"
+      p={{ base: 0, md: 4 }}
+      overflow="hidden"
+    >
       {/* Real-Time Video Calling Overlay & Incoming Call Modal */}
       <VideoCallModal
         callSession={activeCallSession}
@@ -638,7 +782,9 @@ function App() {
 
       <Container
         maxW="1280px"
-        h={{ base: "100vh", md: "calc(100vh - 36px)" }}
+        h={{ base: "100dvh", md: "calc(100dvh - 36px)" }}
+        minH="0"
+        w="full"
         p={0}
         borderRadius={{ base: "0", md: "2xl" }}
         overflow="hidden"
@@ -652,6 +798,7 @@ function App() {
           <Box
             w={{ base: "full", md: "320px", lg: "360px" }}
             h="full"
+            minH={0}
             display={{ base: showMobileChat ? "none" : "block", md: "block" }}
           >
             <Sidebar
@@ -668,6 +815,7 @@ function App() {
           <Box
             flex={1}
             h="full"
+            minH={0}
             display={{ base: showMobileChat ? "block" : "none", md: "block" }}
           >
             {!activeRoom ? (
@@ -698,7 +846,7 @@ function App() {
                 </VStack>
               </Flex>
             ) : (
-              <Flex direction="column" h="full" w="full">
+              <Flex direction="column" h="full" w="full" minH={0}>
                 {/* Header */}
                 <Header
                   user={user}
@@ -775,8 +923,10 @@ function App() {
                   ref={chatContainerRef}
                   onScroll={handleScroll}
                   flex={1}
+                  minH={0}
                   w="full"
                   overflowY="auto"
+                  overflowX="hidden"
                   py={5}
                   spacing={0}
                   bgImage={canvasPattern}
@@ -852,7 +1002,7 @@ function App() {
                     icon={<DownChevronIcon />}
                     onClick={scrollToBottom}
                     pos="absolute"
-                    bottom="84px"
+                    bottom={{ base: "92px", md: "84px" }}
                     right="28px"
                     borderRadius="full"
                     size="sm"

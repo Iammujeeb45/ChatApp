@@ -283,13 +283,16 @@ const VideoCallModal = ({
           <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.750" />
           <ModalContent
             bg={modalBg}
-            borderRadius="3xl"
+            borderRadius={{ base: "24px", md: "3xl" }}
             overflow="hidden"
             boxShadow="2xl"
-            p={6}
+            px={{ base: 4, md: 6 }}
+            py={{ base: 5, md: 6 }}
+            mx={3}
+            maxW={{ base: "calc(100vw - 24px)", sm: "sm" }}
           >
-            <ModalBody textAlign="center">
-              <VStack spacing={5}>
+            <ModalBody textAlign="center" p={0}>
+              <VStack spacing={{ base: 4, md: 5 }}>
                 <Box
                   p={1}
                   borderRadius="full"
@@ -303,7 +306,7 @@ const VideoCallModal = ({
                   }}
                 >
                   <Avatar
-                    size="xl"
+                    size={{ base: "lg", sm: "xl" }}
                     name={callSession.callerName || "User"}
                     src={callSession.callerPhoto || ""}
                     border="3px solid white"
@@ -311,7 +314,12 @@ const VideoCallModal = ({
                 </Box>
 
                 <VStack spacing={1}>
-                  <Text fontSize="lg" fontWeight="800" color="white">
+                  <Text
+                    fontSize={{ base: "md", md: "lg" }}
+                    fontWeight="800"
+                    color="white"
+                    noOfLines={1}
+                  >
                     {callSession.callerName || "Pulse Member"}
                   </Text>
                   <Text fontSize="xs" color="blue.300" fontWeight="600">
@@ -319,11 +327,11 @@ const VideoCallModal = ({
                   </Text>
                 </VStack>
 
-                <HStack spacing={8} pt={2}>
+                <HStack spacing={{ base: 5, md: 8 }} pt={2}>
                   <IconButton
                     aria-label="Decline Call"
                     icon={<PhoneOffIcon boxSize="22px" color="white" />}
-                    size="lg"
+                    size={{ base: "md", md: "lg" }}
                     borderRadius="full"
                     colorScheme="red"
                     boxShadow="0 8px 20px rgba(239, 68, 68, 0.4)"
@@ -332,7 +340,7 @@ const VideoCallModal = ({
                   <IconButton
                     aria-label="Accept Call"
                     icon={<PhoneCallIcon boxSize="22px" color="white" />}
-                    size="lg"
+                    size={{ base: "md", md: "lg" }}
                     borderRadius="full"
                     colorScheme="green"
                     boxShadow="0 8px 20px rgba(34, 197, 94, 0.4)"
@@ -359,8 +367,12 @@ const VideoCallModal = ({
             borderRadius="0"
             overflow="hidden"
             pos="relative"
+            w="100vw"
+            maxW="100vw"
+            h="100dvh"
+            maxH="100dvh"
           >
-            <ModalBody p={0} pos="relative" h="100vh" w="100vw">
+            <ModalBody p={0} pos="relative" h="full" w="full">
               {useJitsiFallback ? (
                 /* Dedicated High-Definition Jitsi Frame Fallback */
                 <iframe
@@ -392,18 +404,19 @@ const VideoCallModal = ({
                   {/* Header Overlay */}
                   <Flex
                     pos="absolute"
-                    top={6}
-                    left={6}
+                    top={{ base: 3, md: 6 }}
+                    left={{ base: 3, md: 6 }}
                     align="center"
                     bg="blackAlpha.750"
-                    px={4}
-                    py={2}
+                    px={{ base: 3, md: 4 }}
+                    py={{ base: 1.5, md: 2 }}
                     borderRadius="full"
                     backdropFilter="blur(8px)"
                     zIndex="10"
                     border="1px solid rgba(255, 255, 255, 0.15)"
+                    maxW={{ base: "calc(100vw - 24px)", md: "unset" }}
                   >
-                    <HStack spacing={3}>
+                    <HStack spacing={{ base: 2, md: 3 }} minW={0}>
                       <Avatar
                         size="sm"
                         name={
@@ -418,7 +431,7 @@ const VideoCallModal = ({
                         }
                       />
                       <VStack align="start" spacing={0}>
-                        <Text fontSize="xs" fontWeight="700" color="white">
+                        <Text fontSize="xs" fontWeight="700" color="white" noOfLines={1}>
                           {callSession.recipientName ||
                             callSession.callerName ||
                             "Pulse Call"}
@@ -440,11 +453,14 @@ const VideoCallModal = ({
                   {/* Local Video (Floating PiP Preview) */}
                   <Box
                     pos="absolute"
-                    bottom={24}
-                    right={6}
-                    w={{ base: "120px", sm: "160px", md: "200px" }}
-                    h={{ base: "160px", sm: "210px", md: "260px" }}
-                    borderRadius="2xl"
+                    bottom={{
+                      base: "calc(env(safe-area-inset-bottom) + 72px)",
+                      md: 24,
+                    }}
+                    right={{ base: 3, md: 6 }}
+                    w={{ base: "92px", sm: "140px", md: "200px" }}
+                    h={{ base: "124px", sm: "180px", md: "260px" }}
+                    borderRadius={{ base: "18px", md: "2xl" }}
                     overflow="hidden"
                     boxShadow="0 10px 30px rgba(0, 0, 0, 0.5)"
                     border="2px solid rgba(255, 255, 255, 0.3)"
@@ -468,19 +484,29 @@ const VideoCallModal = ({
                   {/* Bottom In-Call Control Toolbar */}
                   <Flex
                     pos="absolute"
-                    bottom={6}
+                    bottom={{
+                      base: "calc(env(safe-area-inset-bottom) + 10px)",
+                      md: 6,
+                    }}
                     left="50%"
                     transform="translateX(-50%)"
                     bg="rgba(15, 23, 42, 0.85)"
                     border="1px solid rgba(255, 255, 255, 0.15)"
-                    px={6}
-                    py={3}
-                    borderRadius="full"
+                    px={{ base: 3, sm: 4, md: 6 }}
+                    py={{ base: 2, md: 3 }}
+                    borderRadius={{ base: "24px", md: "full" }}
                     backdropFilter="blur(16px)"
                     boxShadow="0 12px 32px rgba(0,0,0,0.5)"
                     zIndex="20"
+                    maxW={{ base: "calc(100vw - 12px)", md: "unset" }}
+                    w={{ base: "calc(100vw - 12px)", md: "auto" }}
                   >
-                    <HStack spacing={4}>
+                    <HStack
+                      spacing={{ base: 2, sm: 2, md: 4 }}
+                      flexWrap="wrap"
+                      justify="center"
+                      w="full"
+                    >
                       {/* Mute Audio */}
                       <IconButton
                         aria-label="Toggle Mute"
@@ -496,6 +522,9 @@ const VideoCallModal = ({
                         bg={isMuted ? "red.500" : "whiteAlpha.200"}
                         _hover={{ bg: isMuted ? "red.600" : "whiteAlpha.300" }}
                         onClick={toggleMute}
+                        w={{ base: "44px", md: "40px" }}
+                        h={{ base: "44px", md: "40px" }}
+                        minW={{ base: "44px", md: "40px" }}
                       />
 
                       {/* Toggle Camera */}
@@ -515,20 +544,27 @@ const VideoCallModal = ({
                           bg: isVideoOff ? "red.600" : "whiteAlpha.300",
                         }}
                         onClick={toggleVideo}
+                        w={{ base: "44px", md: "40px" }}
+                        h={{ base: "44px", md: "40px" }}
+                        minW={{ base: "44px", md: "40px" }}
                       />
 
                       {/* HD Mode Switcher */}
                       <Badge
                         cursor="pointer"
-                        px={3}
-                        py={2}
+                        px={{ base: 3, md: 3 }}
+                        py={{ base: 2, md: 2 }}
                         borderRadius="full"
                         bg="blue.600"
                         color="white"
-                        fontSize="10px"
+                        fontSize={{ base: "9px", md: "10px" }}
                         fontWeight="700"
                         _hover={{ bg: "blue.700" }}
                         onClick={() => setUseJitsiFallback(true)}
+                        whiteSpace="nowrap"
+                        minH={{ base: "44px", md: "auto" }}
+                        display="flex"
+                        alignItems="center"
                       >
                         ⚡ Switch to HD Relay
                       </Badge>
@@ -542,6 +578,9 @@ const VideoCallModal = ({
                         colorScheme="red"
                         boxShadow="0 4px 16px rgba(239, 68, 68, 0.5)"
                         onClick={() => onEndCall(callSession.id)}
+                        w={{ base: "44px", md: "40px" }}
+                        h={{ base: "44px", md: "40px" }}
+                        minW={{ base: "44px", md: "40px" }}
                       />
                     </HStack>
                   </Flex>
