@@ -43,6 +43,7 @@ import {
   TrashIcon,
   BackArrowIcon,
   CamcorderIcon,
+  PhoneCallIcon,
 } from "./Icons";
 
 const Header = ({
@@ -59,16 +60,26 @@ const Header = ({
   isSelectMode,
   onBackToSidebar,
   onStartVideoCall,
+  onStartAudioCall,
 }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef();
 
   // Top-Level Hook Declarations
-  const headerBg = useColorModeValue("pulse.lightHeaderBg", "pulse.darkHeaderBg");
-  const headerBorder = useColorModeValue("pulse.lightBorder", "pulse.darkBorder");
+  const headerBg = useColorModeValue(
+    "pulse.lightHeaderBg",
+    "pulse.darkHeaderBg",
+  );
+  const headerBorder = useColorModeValue(
+    "pulse.lightBorder",
+    "pulse.darkBorder",
+  );
   const textColor = useColorModeValue("pulse.lightText", "pulse.darkText");
-  const subtextColor = useColorModeValue("pulse.lightSubtext", "pulse.darkSubtext");
+  const subtextColor = useColorModeValue(
+    "pulse.lightSubtext",
+    "pulse.darkSubtext",
+  );
   const inputBg = useColorModeValue("pulse.lightInputBg", "pulse.darkInputBg");
   const inputBorder = useColorModeValue("gray.300", "whiteAlpha.100");
   const hoverBg = useColorModeValue("blackAlpha.50", "whiteAlpha.100");
@@ -98,20 +109,36 @@ const Header = ({
       zIndex="10"
     >
       {/* Clear Chat Confirmation Modal */}
-      <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered>
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+        isCentered
+      >
         <AlertDialogOverlay backdropFilter="blur(4px)" bg="blackAlpha.600" />
         <AlertDialogContent bg={modalBg} borderRadius="2xl" overflow="hidden">
           <AlertDialogHeader fontSize="lg" fontWeight="700" color={textColor}>
             Clear Current Chat?
           </AlertDialogHeader>
           <AlertDialogBody fontSize="sm" color={subtextColor}>
-            Are you sure you want to clear all messages in this chat for you? This action cannot be undone.
+            Are you sure you want to clear all messages in this chat for you?
+            This action cannot be undone.
           </AlertDialogBody>
           <AlertDialogFooter spacing={3}>
-            <Button ref={cancelRef} onClick={onClose} size="sm" borderRadius="full">
+            <Button
+              ref={cancelRef}
+              onClick={onClose}
+              size="sm"
+              borderRadius="full"
+            >
               Cancel
             </Button>
-            <Button colorScheme="red" onClick={handleConfirmClearChat} size="sm" borderRadius="full">
+            <Button
+              colorScheme="red"
+              onClick={handleConfirmClearChat}
+              size="sm"
+              borderRadius="full"
+            >
               Clear Chat
             </Button>
           </AlertDialogFooter>
@@ -137,7 +164,11 @@ const Header = ({
             name={activeRoom.name || "User"}
             src={activeRoom.photoURL || ""}
           >
-            <AvatarBadge boxSize="1.1em" bg="green.500" border="2px solid white" />
+            <AvatarBadge
+              boxSize="1.1em"
+              bg="green.500"
+              border="2px solid white"
+            />
           </Avatar>
         ) : (
           <PulseLogo boxSize="32px" />
@@ -155,19 +186,32 @@ const Header = ({
 
       {/* Action Controls & Search */}
       <HStack spacing={2} flexShrink={0} justify="flex-end">
-        {/* Video Call Button for DMs */}
+        {/* Audio & Video Call Buttons for DMs */}
         {activeRoom?.isDM && (
-          <Tooltip label="Start Video Call">
-            <IconButton
-              size="sm"
-              aria-label="Start Video Call"
-              icon={<CamcorderIcon color="#2563eb" boxSize="19px" />}
-              variant="ghost"
-              borderRadius="full"
-              onClick={onStartVideoCall}
-              _hover={{ bg: hoverBg }}
-            />
-          </Tooltip>
+          <>
+            <Tooltip label="Audio Call">
+              <IconButton
+                size="sm"
+                aria-label="Start Audio Call"
+                icon={<PhoneCallIcon color="#059669" boxSize="18px" />}
+                variant="ghost"
+                borderRadius="full"
+                onClick={onStartAudioCall}
+                _hover={{ bg: hoverBg }}
+              />
+            </Tooltip>
+            <Tooltip label="Video Call">
+              <IconButton
+                size="sm"
+                aria-label="Start Video Call"
+                icon={<CamcorderIcon color="#2563eb" boxSize="19px" />}
+                variant="ghost"
+                borderRadius="full"
+                onClick={onStartVideoCall}
+                _hover={{ bg: hoverBg }}
+              />
+            </Tooltip>
+          </>
         )}
 
         {/* Sound Toggle */}
@@ -175,7 +219,13 @@ const Header = ({
           <IconButton
             size="sm"
             aria-label="Toggle Sound"
-            icon={soundEnabled ? <SoundOnIcon color="#06b6d4" /> : <SoundOffIcon color="red.400" />}
+            icon={
+              soundEnabled ? (
+                <SoundOnIcon color="#06b6d4" />
+              ) : (
+                <SoundOffIcon color="red.400" />
+              )
+            }
             variant="ghost"
             borderRadius="full"
             color={subtextColor}
@@ -186,11 +236,23 @@ const Header = ({
         </Tooltip>
 
         {/* Theme Switcher */}
-        <Tooltip label={colorMode === "dark" ? "Switch to Light mode" : "Switch to Dark mode"}>
+        <Tooltip
+          label={
+            colorMode === "dark"
+              ? "Switch to Light mode"
+              : "Switch to Dark mode"
+          }
+        >
           <IconButton
             size="sm"
             aria-label="Toggle theme"
-            icon={colorMode === "dark" ? <SunIcon color="#f59e0b" /> : <MoonIcon color="#8b5cf6" />}
+            icon={
+              colorMode === "dark" ? (
+                <SunIcon color="#f59e0b" />
+              ) : (
+                <MoonIcon color="#8b5cf6" />
+              )
+            }
             variant="ghost"
             borderRadius="full"
             color={subtextColor}
@@ -217,8 +279,14 @@ const Header = ({
             borderRadius="full"
           />
           <MenuList bg={menuListBg} borderColor={headerBorder} p={2}>
-            <MenuItem bg="transparent" color={textColor} cursor="default" fontSize="xs">
-              Logged in as <strong>&nbsp;{user?.displayName || user?.email}</strong>
+            <MenuItem
+              bg="transparent"
+              color={textColor}
+              cursor="default"
+              fontSize="xs"
+            >
+              Logged in as{" "}
+              <strong>&nbsp;{user?.displayName || user?.email}</strong>
             </MenuItem>
             <MenuDivider borderColor={headerBorder} />
 
@@ -313,6 +381,7 @@ Header.propTypes = {
   isSelectMode: PropTypes.bool.isRequired,
   onBackToSidebar: PropTypes.func.isRequired,
   onStartVideoCall: PropTypes.func,
+  onStartAudioCall: PropTypes.func,
 };
 
 export default Header;

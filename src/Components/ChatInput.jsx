@@ -19,6 +19,7 @@ import {
   SendIcon,
   PaperclipIcon,
   VideoIcon,
+  ImageIcon,
   MicIcon,
   TrashIcon,
   CloseIcon,
@@ -41,6 +42,8 @@ const ChatInput = ({
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
   const videoInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const inputBg = useColorModeValue("pulse.lightInputBg", "pulse.darkInputBg");
   const borderColor = useColorModeValue(
@@ -53,7 +56,10 @@ const ChatInput = ({
     "pulse.darkSubtext",
   );
   const replyBannerBg = useColorModeValue("blue.50", "rgba(37, 99, 235, 0.15)");
-  const recordingToolbarBg = useColorModeValue("red.50", "rgba(239, 68, 68, 0.15)");
+  const recordingToolbarBg = useColorModeValue(
+    "red.50",
+    "rgba(239, 68, 68, 0.15)",
+  );
   const actionHoverBg = useColorModeValue("blackAlpha.50", "whiteAlpha.100");
   const menuListBg = useColorModeValue("#ffffff", "#1e293b");
   const micHoverBg = useColorModeValue("blue.50", "whiteAlpha.100");
@@ -170,6 +176,21 @@ const ChatInput = ({
       {/* Hidden File Inputs */}
       <input
         type="file"
+        ref={imageInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => handleFileSelect(e, "image")}
+      />
+      <input
+        type="file"
+        ref={cameraInputRef}
+        accept="image/*"
+        capture="environment"
+        style={{ display: "none" }}
+        onChange={(e) => handleFileSelect(e, "image")}
+      />
+      <input
+        type="file"
         ref={videoInputRef}
         accept="video/*"
         style={{ display: "none" }}
@@ -217,7 +238,7 @@ const ChatInput = ({
 
       {/* In-Place Live Voice Recording Toolbar */}
       {isRecording ? (
-      <Flex
+        <Flex
           as="div"
           w="full"
           direction={{ base: "column", sm: "row" }}
@@ -310,12 +331,20 @@ const ChatInput = ({
             />
             <MenuList bg={menuListBg} borderColor={borderColor} p={2}>
               <MenuItem
+                icon={<ImageIcon color="#2563eb" />}
+                onClick={() => imageInputRef.current?.click()}
+                fontSize="xs"
+                borderRadius="md"
+              >
+                Photo & Image
+              </MenuItem>
+              <MenuItem
                 icon={<VideoIcon color="#7c3aed" />}
                 onClick={() => videoInputRef.current?.click()}
                 fontSize="xs"
                 borderRadius="md"
               >
-                Upload Video
+                Video
               </MenuItem>
             </MenuList>
           </Menu>

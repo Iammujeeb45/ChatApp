@@ -56,8 +56,9 @@ const VideoCallModal = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(
-    "Connecting video...",
+    "Connecting...",
   );
+  const [callDuration, setCallDuration] = useState(0);
   const [useJitsiFallback, setUseJitsiFallback] = useState(false);
 
   const localVideoRef = useRef(null);
@@ -76,6 +77,7 @@ const VideoCallModal = ({
   const isActiveCall =
     callSession &&
     (callSession.status === "calling" || callSession.status === "connected");
+  const isAudioOnly = callSession?.callType === "audio";
 
   // Real-time listener for Call Termination by either party
   useEffect(() => {
@@ -91,6 +93,29 @@ const VideoCallModal = ({
     return () => unsubCall();
   }, [callSession?.id, onEndCall]);
 
+  // Call Duration Timer
+  useEffect(() => {
+    if (!isActiveCall || isIncoming) return;
+    if (connectionStatus !== "Connected") return;
+
+    const interval = setInterval(() => {
+      setCallDuration((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isActiveCall, isIncoming, connectionStatus]);
+
+  // Reset duration when call ends
+  useEffect(() => {
+    if (!callSession) setCallDuration(0);
+  }, [callSession]);
+
+  const formatCallDuration = (sec) => {
+    const mins = Math.floor(sec / 60);
+    const remainder = sec % 60;
+    return `${mins}:${remainder < 10 ? "0" : ""}${remainder}`;
+  };
+
   // WebRTC PeerConnection & Real-time Firestore Signaling
   useEffect(() => {
     if (!callSession || isIncoming || !isActiveCall) return;
@@ -104,9 +129,13 @@ const VideoCallModal = ({
     const callerCandidatesCol = collection(callDocRef, "callerCandidates");
     const calleeCandidatesCol = collection(callDocRef, "calleeCandidates");
 
-    // 1. Get Local Media Stream
+    // 1. Get Local Media Stream (audio-only or audio+video)
+    const mediaConstraints = isAudioOnly
+      ? { audio: true, video: false }
+      : { video: true, audio: true };
+
     navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
+      .getUserMedia(mediaConstraints)
       .then(async (stream) => {
         localStream = stream;
         localStreamRef.current = stream;
@@ -246,7 +275,7 @@ const VideoCallModal = ({
         pcRef.current.close();
       }
     };
-  }, [callSession?.id, isIncoming, isCaller, isActiveCall]);
+  }, [callSession?.id, isIncoming, isCaller, isActiveCall, isAudioOnly]);
 
   const toggleMute = () => {
     if (localStreamRef.current) {
@@ -323,7 +352,7 @@ const VideoCallModal = ({
                     {callSession.callerName || "Pulse Member"}
                   </Text>
                   <Text fontSize="xs" color="blue.300" fontWeight="600">
-                    Incoming Video Call...
+                    Incoming {isAudioOnly ? "Audio" : "Video"} Call...
                   </Text>
                 </VStack>
 
@@ -388,18 +417,68 @@ const VideoCallModal = ({
               ) : (
                 /* Native WebRTC Video Streams */
                 <>
-                  {/* Remote Video (Fullscreen) */}
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      background: "#090d16",
-                    }}
-                  />
+                  {/* Remote Video (Fullscreen) — or Avatar for Audio Calls */}
+                  {isAudioOnly ? (
+                    <Flex
+                      w="full"
+                      h="full"
+                      direction="column"
+                      align="center"
+                      justify="center"
+                      bgGradient="linear(to-b, #0f172a, #1e293b, #0f172a)"
+                    >
+                      <Box
+                        p={1.5}
+                        borderRadius="full"
+                        bgGradient="linear(to-r, #059669, #10b981)"
+                        mb={6}
+                        sx={{
+                          animation: connectionStatus === "Connected" ? "none" : "pulse 1.5s infinite alternate",
+                          "@keyframes pulse": {
+                            "0%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(5, 150, 105, 0.5)" },
+                            "100%": { transform: "scale(1.05)", boxShadow: "0 0 0 20px rgba(5, 150, 105, 0)" },
+                          },
+                        }}
+                      >
+                        <Avatar
+                          size="2xl"
+                          name={
+                            callSession.recipientName ||
+                            callSession.callerName ||
+                            "Contact"
+                          }
+                          src={
+                            callSession.recipientPhoto ||
+                            callSession.callerPhoto ||
+                            ""
+                          }
+                          border="4px solid white"
+                        />
+                      </Box>
+                      <Text fontSize="xl" fontWeight="800" color="white" mb={1}>
+                        {callSession.recipientName ||
+                          callSession.callerName ||
+                          "Pulse Call"}
+                      </Text>
+                      <Text fontSize="sm" color="whiteAlpha.700" fontWeight="600">
+                        {connectionStatus === "Connected"
+                          ? formatCallDuration(callDuration)
+                          : connectionStatus}
+                      </Text>
+                    </Flex>
+                  ) : (
+                    <video
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        background: "#090d16",
+                      }}
+                    />
+                  )}
 
                   {/* Header Overlay */}
                   <Flex
@@ -444,42 +523,44 @@ const VideoCallModal = ({
                           borderRadius="full"
                           px={2}
                         >
-                          ● {connectionStatus}
+                          ● {connectionStatus === "Connected" ? (isAudioOnly ? formatCallDuration(callDuration) : "Connected") : connectionStatus}
                         </Badge>
                       </VStack>
                     </HStack>
                   </Flex>
 
-                  {/* Local Video (Floating PiP Preview) */}
-                  <Box
-                    pos="absolute"
-                    bottom={{
-                      base: "calc(env(safe-area-inset-bottom) + 72px)",
-                      md: 24,
-                    }}
-                    right={{ base: 3, md: 6 }}
-                    w={{ base: "92px", sm: "140px", md: "200px" }}
-                    h={{ base: "124px", sm: "180px", md: "260px" }}
-                    borderRadius={{ base: "18px", md: "2xl" }}
-                    overflow="hidden"
-                    boxShadow="0 10px 30px rgba(0, 0, 0, 0.5)"
-                    border="2px solid rgba(255, 255, 255, 0.3)"
-                    bg="black"
-                    zIndex="10"
-                  >
-                    <video
-                      ref={localVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        transform: "scaleX(-1)", // Mirror local video
+                  {/* Local Video (Floating PiP Preview) — hidden for audio calls */}
+                  {!isAudioOnly && (
+                    <Box
+                      pos="absolute"
+                      bottom={{
+                        base: "calc(env(safe-area-inset-bottom) + 72px)",
+                        md: 24,
                       }}
-                    />
-                  </Box>
+                      right={{ base: 3, md: 6 }}
+                      w={{ base: "92px", sm: "140px", md: "200px" }}
+                      h={{ base: "124px", sm: "180px", md: "260px" }}
+                      borderRadius={{ base: "18px", md: "2xl" }}
+                      overflow="hidden"
+                      boxShadow="0 10px 30px rgba(0, 0, 0, 0.5)"
+                      border="2px solid rgba(255, 255, 255, 0.3)"
+                      bg="black"
+                      zIndex="10"
+                    >
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          transform: "scaleX(-1)",
+                        }}
+                      />
+                    </Box>
+                  )}
 
                   {/* Bottom In-Call Control Toolbar */}
                   <Flex
@@ -527,47 +608,51 @@ const VideoCallModal = ({
                         minW={{ base: "44px", md: "40px" }}
                       />
 
-                      {/* Toggle Camera */}
-                      <IconButton
-                        aria-label="Toggle Camera"
-                        icon={
-                          isVideoOff ? (
-                            <VideoOffIcon color="white" />
-                          ) : (
-                            <CamcorderIcon color="white" />
-                          )
-                        }
-                        size="md"
-                        borderRadius="full"
-                        bg={isVideoOff ? "red.500" : "whiteAlpha.200"}
-                        _hover={{
-                          bg: isVideoOff ? "red.600" : "whiteAlpha.300",
-                        }}
-                        onClick={toggleVideo}
-                        w={{ base: "44px", md: "40px" }}
-                        h={{ base: "44px", md: "40px" }}
-                        minW={{ base: "44px", md: "40px" }}
-                      />
+                      {/* Toggle Camera — hidden for audio calls */}
+                      {!isAudioOnly && (
+                        <IconButton
+                          aria-label="Toggle Camera"
+                          icon={
+                            isVideoOff ? (
+                              <VideoOffIcon color="white" />
+                            ) : (
+                              <CamcorderIcon color="white" />
+                            )
+                          }
+                          size="md"
+                          borderRadius="full"
+                          bg={isVideoOff ? "red.500" : "whiteAlpha.200"}
+                          _hover={{
+                            bg: isVideoOff ? "red.600" : "whiteAlpha.300",
+                          }}
+                          onClick={toggleVideo}
+                          w={{ base: "44px", md: "40px" }}
+                          h={{ base: "44px", md: "40px" }}
+                          minW={{ base: "44px", md: "40px" }}
+                        />
+                      )}
 
-                      {/* HD Mode Switcher */}
-                      <Badge
-                        cursor="pointer"
-                        px={{ base: 3, md: 3 }}
-                        py={{ base: 2, md: 2 }}
-                        borderRadius="full"
-                        bg="blue.600"
-                        color="white"
-                        fontSize={{ base: "9px", md: "10px" }}
-                        fontWeight="700"
-                        _hover={{ bg: "blue.700" }}
-                        onClick={() => setUseJitsiFallback(true)}
-                        whiteSpace="nowrap"
-                        minH={{ base: "44px", md: "auto" }}
-                        display="flex"
-                        alignItems="center"
-                      >
-                        ⚡ Switch to HD Relay
-                      </Badge>
+                      {/* HD Mode Switcher — only for video calls */}
+                      {!isAudioOnly && (
+                        <Badge
+                          cursor="pointer"
+                          px={{ base: 3, md: 3 }}
+                          py={{ base: 2, md: 2 }}
+                          borderRadius="full"
+                          bg="blue.600"
+                          color="white"
+                          fontSize={{ base: "9px", md: "10px" }}
+                          fontWeight="700"
+                          _hover={{ bg: "blue.700" }}
+                          onClick={() => setUseJitsiFallback(true)}
+                          whiteSpace="nowrap"
+                          minH={{ base: "44px", md: "auto" }}
+                          display="flex"
+                          alignItems="center"
+                        >
+                          ⚡ Switch to HD Relay
+                        </Badge>
+                      )}
 
                       {/* Red End Call Button */}
                       <IconButton
