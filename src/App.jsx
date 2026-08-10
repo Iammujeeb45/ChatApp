@@ -123,10 +123,22 @@ const loadImageFromFile = (file) =>
     img.src = url;
   });
 
+const canvasToBlob = (canvas, type, quality) =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (result) resolve(result);
+        else reject(new Error(`Unable to encode image as ${type}.`));
+      },
+      type,
+      quality,
+    );
+  });
+
 const compressImageFile = async (file) => {
   const image = await loadImageFromFile(file);
-  const maxWidth = 1280;
-  const maxHeight = 1280;
+  const maxWidth = 1600;
+  const maxHeight = 1600;
 
   let { width, height } = image;
   const scale = Math.min(maxWidth / width, maxHeight / height, 1);
@@ -146,21 +158,30 @@ const compressImageFile = async (file) => {
   context.fillRect(0, 0, width, height);
   context.drawImage(image, 0, 0, width, height);
 
-  const blob = await new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (result) => {
-        if (result) resolve(result);
-        else reject(new Error("Unable to compress image."));
-      },
-      "image/jpeg",
-      0.62,
-    );
-  });
+  let blob = null;
+  let contentType = "image/webp";
+  let extension = "webp";
+
+  try {
+    blob = await canvasToBlob(canvas, "image/webp", 0.82);
+  } catch {
+    blob = null;
+  }
+
+  if (!blob) {
+    try {
+      blob = await canvasToBlob(canvas, "image/jpeg", 0.78);
+      contentType = "image/jpeg";
+      extension = "jpg";
+    } catch {
+      return null;
+    }
+  }
 
   return {
     blob,
-    contentType: "image/jpeg",
-    extension: "jpg",
+    contentType,
+    extension,
   };
 };
 
@@ -177,12 +198,25 @@ const uploadMediaToStorage = async ({
 
   if (file instanceof File || file instanceof Blob) {
     if (mediaType === "image") {
-      const { blob, contentType, extension } = await compressImageFile(file);
-      const imageRef = ref(storage, `messages/${roomId}/${uid}/${timestamp}_${safeBaseName.replace(/\.[^.]+$/, "")}.${extension}`);
-      await uploadBytes(imageRef, blob, { contentType });
+      const compressed = await compressImageFile(file);
+      const safeImageBaseName = safeBaseName.replace(/\.[^.]+$/, "");
+
+      if (compressed?.blob) {
+        const imageRef = ref(storage, `messages/${roomId}/${uid}/${timestamp}_${safeImageBaseName}.${compressed.extension}`);
+        await uploadBytes(imageRef, compressed.blob, { contentType: compressed.contentType });
+        return {
+          url: await getDownloadURL(imageRef),
+          storagePath: imageRef.fullPath,
+        };
+      }
+
+      const fallbackRef = ref(storage, `messages/${roomId}/${uid}/${timestamp}_${safeBaseName}`);
+      await uploadBytes(fallbackRef, file, {
+        contentType: file.type || "application/octet-stream",
+      });
       return {
-        url: await getDownloadURL(imageRef),
-        storagePath: imageRef.fullPath,
+        url: await getDownloadURL(fallbackRef),
+        storagePath: fallbackRef.fullPath,
       };
     }
 

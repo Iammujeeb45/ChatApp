@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Flex,
   HStack,
@@ -6,9 +6,7 @@ import {
   Input,
   IconButton,
   Box,
-  Collapse,
   Button,
-  SimpleGrid,
   Text,
   useColorModeValue,
   Menu,
@@ -19,7 +17,6 @@ import {
 import PropTypes from "prop-types";
 import {
   SendIcon,
-  EmojiIcon,
   PaperclipIcon,
   ImageIcon,
   VideoIcon,
@@ -29,202 +26,6 @@ import {
   ReplyIcon,
 } from "./Icons";
 
-// Categorized Comprehensive Emoji Collection
-const EMOJI_CATEGORIES = [
-  {
-    id: "smileys",
-    name: "😀 Smileys",
-    emojis: [
-      "😀",
-      "😃",
-      "😄",
-      "😁",
-      "😆",
-      "😅",
-      "😂",
-      "🤣",
-      "😊",
-      "😇",
-      "🙂",
-      "🙃",
-      "😉",
-      "😌",
-      "😍",
-      "🥰",
-      "😘",
-      "😗",
-      "😙",
-      "😚",
-      "😋",
-      "😛",
-      "😝",
-      "😜",
-      "🤪",
-      "🤨",
-      "🧐",
-      "🤓",
-      "😎",
-      "🥸",
-      "🤩",
-      "🥳",
-      "😏",
-      "😒",
-      "😞",
-      "😔",
-      "😟",
-      "😕",
-      "🙁",
-      "☹️",
-      "😣",
-      "😖",
-      "😫",
-      "😩",
-      "🥺",
-      "😢",
-      "😭",
-      "😤",
-      "😠",
-      "😡",
-      "🤬",
-      "🤯",
-      "😳",
-      "🥵",
-      "🥶",
-      "😱",
-      "😨",
-      "😰",
-      "😥",
-      "😓",
-    ],
-  },
-  {
-    id: "gestures",
-    name: "👍 Gestures",
-    emojis: [
-      "👍",
-      "👎",
-      "👊",
-      "✊",
-      "🤛",
-      "🤜",
-      "🤞",
-      "✌️",
-      "🤟",
-      "🤘",
-      "👌",
-      "🤌",
-      "🤏",
-      "👈",
-      "👉",
-      "👆",
-      "👇",
-      "☝️",
-      "✋",
-      "🤚",
-      "🖐️",
-      "🖖",
-      "👋",
-      "🤙",
-      "💪",
-      "✍️",
-      "🙏",
-      "👏",
-      "🙌",
-      "👐",
-      "🤲",
-      "🤝",
-      "👁️",
-      "🧠",
-      "🗣️",
-      "👤",
-      "👥",
-      "🫂",
-    ],
-  },
-  {
-    id: "hearts",
-    name: "❤️ Hearts",
-    emojis: [
-      "❤️",
-      "🧡",
-      "💛",
-      "💚",
-      "💙",
-      "💜",
-      "🖤",
-      "🤍",
-      "🤎",
-      "💔",
-      "❣️",
-      "💕",
-      "💞",
-      "💓",
-      "💗",
-      "💖",
-      "💘",
-      "💝",
-      "💟",
-      "💯",
-      "💥",
-      "💫",
-      "💦",
-      "💨",
-      "💬",
-      "💭",
-      "💡",
-      "⚡",
-      "💣",
-      "🔥",
-    ],
-  },
-  {
-    id: "objects",
-    name: "🎉 Celebrations",
-    emojis: [
-      "🎉",
-      "🎊",
-      "🎈",
-      "🎁",
-      "🎀",
-      "🏆",
-      "🥇",
-      "🥈",
-      "🥉",
-      "⚽",
-      "🏀",
-      "🏈",
-      "⚾",
-      "🎾",
-      "🎮",
-      "🎯",
-      "🎨",
-      "🎭",
-      "🎬",
-      "🎤",
-      "🎧",
-      "🎷",
-      "🎸",
-      "🎹",
-      "📱",
-      "💻",
-      "📷",
-      "📸",
-      "🍿",
-      "☕",
-      "🍺",
-      "🥂",
-      "🍾",
-      "🍕",
-      "🍔",
-      "🍟",
-      "🌮",
-      "🍣",
-      "🚀",
-      "✨",
-    ],
-  },
-];
-
 const ChatInput = ({
   message,
   setMessage,
@@ -233,8 +34,6 @@ const ChatInput = ({
   replyingTo,
   onCancelReply,
 }) => {
-  const [showEmojis, setShowEmojis] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("smileys");
   const [isRecording, setIsRecording] = useState(false);
   const [recordTimer, setRecordTimer] = useState(0);
 
@@ -254,7 +53,11 @@ const ChatInput = ({
     "pulse.lightSubtext",
     "pulse.darkSubtext",
   );
-  const emojiPanelBg = useColorModeValue("#ffffff", "#1e293b");
+  const replyBannerBg = useColorModeValue("blue.50", "rgba(37, 99, 235, 0.15)");
+  const recordingToolbarBg = useColorModeValue("red.50", "rgba(239, 68, 68, 0.15)");
+  const actionHoverBg = useColorModeValue("blackAlpha.50", "whiteAlpha.100");
+  const menuListBg = useColorModeValue("#ffffff", "#1e293b");
+  const micHoverBg = useColorModeValue("blue.50", "whiteAlpha.100");
 
   // Format recording timer mm:ss
   const formatRecordTime = (sec) => {
@@ -332,17 +135,13 @@ const ChatInput = ({
     };
   }, []);
 
-  const addEmoji = (emoji) => {
-    setMessage((prev) => prev + emoji);
-  };
-
   // Pass files through so App.jsx can compress and upload them to Firebase Storage
   const handleFileSelect = (e, mediaType) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 25 * 1024 * 1024) {
-      alert("File size exceeds 25MB limit.");
+    if (file.size > 50 * 1024 * 1024) {
+      alert("File size exceeds 50MB limit.");
       return;
     }
 
@@ -355,10 +154,6 @@ const ChatInput = ({
     setMessage("");
     e.target.value = "";
   };
-
-  const currentCategoryObj =
-    EMOJI_CATEGORIES.find((c) => c.id === activeCategory) ||
-    EMOJI_CATEGORIES[0];
 
   return (
     <Box w="full" px={4} pb={4} pt={2} zIndex="5">
@@ -381,7 +176,7 @@ const ChatInput = ({
       {/* Quoted Reply Preview Banner */}
       {replyingTo && (
         <Flex
-          bg={useColorModeValue("blue.50", "rgba(37, 99, 235, 0.15)")}
+          bg={replyBannerBg}
           borderLeft="4px solid"
           borderLeftColor="#2563eb"
           borderTop="1px solid"
@@ -417,83 +212,6 @@ const ChatInput = ({
         </Flex>
       )}
 
-      {/* Comprehensive Categorized Emoji Panel */}
-      <Collapse in={showEmojis} animateOpacity>
-        <Box
-          bg={emojiPanelBg}
-          border="1px solid"
-          borderColor={borderColor}
-          borderRadius="2xl"
-          p={3}
-          mb={2.5}
-          boxShadow="xl"
-          maxW="full"
-        >
-          {/* Category Tabs Header */}
-          <HStack
-            justify="space-between"
-            mb={2.5}
-            borderBottom="1px solid"
-            borderColor={borderColor}
-            pb={2}
-          >
-            <HStack spacing={1} overflowX="auto">
-              {EMOJI_CATEGORIES.map((cat) => (
-                <Button
-                  key={cat.id}
-                  size="xs"
-                  variant={activeCategory === cat.id ? "solid" : "ghost"}
-                  colorScheme={activeCategory === cat.id ? "blue" : "gray"}
-                  borderRadius="full"
-                  fontSize="xs"
-                  onClick={() => setActiveCategory(cat.id)}
-                >
-                  {cat.name}
-                </Button>
-              ))}
-            </HStack>
-            <IconButton
-              size="xs"
-              aria-label="Close emoji picker"
-              icon={<CloseIcon />}
-              variant="ghost"
-              borderRadius="full"
-              onClick={() => setShowEmojis(false)}
-            />
-          </HStack>
-
-          {/* Emoji Grid */}
-          <SimpleGrid
-            columns={{ base: 7, sm: 10, md: 12 }}
-            spacing={1.5}
-            maxH="180px"
-            overflowY="auto"
-            p={1}
-          >
-            {currentCategoryObj.emojis.map((emoji, index) => (
-              <Button
-                key={index}
-                size="sm"
-                variant="ghost"
-                fontSize="xl"
-                p={0}
-                minW="34px"
-                h="34px"
-                borderRadius="lg"
-                _hover={{
-                  transform: "scale(1.25)",
-                  bg: useColorModeValue("blue.50", "whiteAlpha.200"),
-                }}
-                transition="transform 0.1s ease"
-                onClick={() => addEmoji(emoji)}
-              >
-                {emoji}
-              </Button>
-            ))}
-          </SimpleGrid>
-        </Box>
-      </Collapse>
-
       {/* In-Place Live Voice Recording Toolbar */}
       {isRecording ? (
       <Flex
@@ -503,7 +221,7 @@ const ChatInput = ({
           align={{ base: "stretch", sm: "center" }}
           justify="space-between"
           gap={3}
-          bg={useColorModeValue("red.50", "rgba(239, 68, 68, 0.15)")}
+          bg={recordingToolbarBg}
           border="1.5px solid"
           borderColor="red.400"
           borderRadius={{ base: "24px", sm: "full" }}
@@ -572,21 +290,6 @@ const ChatInput = ({
           }}
           transition="all 0.2s ease"
         >
-          <IconButton
-            aria-label="Emoji Picker"
-            icon={
-              <EmojiIcon color={showEmojis ? "#2563eb" : placeholderColor} />
-            }
-            variant="ghost"
-            size="sm"
-            borderRadius="full"
-            onClick={() => setShowEmojis(!showEmojis)}
-            _hover={{
-              bg: useColorModeValue("blackAlpha.50", "whiteAlpha.100"),
-            }}
-            alignSelf="flex-start"
-          />
-
           {/* Attach Media Menu */}
           <Menu>
             <MenuButton
@@ -598,15 +301,11 @@ const ChatInput = ({
               borderRadius="full"
               mr={1}
               _hover={{
-                bg: useColorModeValue("blackAlpha.50", "whiteAlpha.100"),
+                bg: actionHoverBg,
               }}
               alignSelf="flex-start"
             />
-            <MenuList
-              bg={useColorModeValue("#ffffff", "#1e293b")}
-              borderColor={borderColor}
-              p={2}
-            >
+            <MenuList bg={menuListBg} borderColor={borderColor} p={2}>
               <MenuItem
                 icon={<ImageIcon color="#0284c7" />}
                 onClick={() => imageInputRef.current?.click()}
@@ -670,7 +369,7 @@ const ChatInput = ({
                 variant="ghost"
                 borderRadius="full"
                 onClick={startRecording}
-                _hover={{ bg: useColorModeValue("blue.50", "whiteAlpha.100") }}
+                _hover={{ bg: micHoverBg }}
               />
             )}
           </HStack>

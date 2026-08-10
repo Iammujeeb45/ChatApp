@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 import { Icon } from "@chakra-ui/react";
 
 export const PulseLogo = (props) => (
@@ -59,6 +59,10 @@ export const DoubleCheckIcon = ({ isRead = true, ...props }) => (
     <path d="M22 10l-7.5 7.5L13 16" />
   </Icon>
 );
+
+DoubleCheckIcon.propTypes = {
+  isRead: PropTypes.bool,
+};
 
 export const SendIcon = (props) => (
   <Icon

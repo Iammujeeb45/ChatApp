@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
 import {
   Box,
@@ -144,7 +144,7 @@ const Sidebar = ({
               ) : modalFilteredUsers.length === 0 ? (
                 <Box p={6} textAlign="center">
                   <Text fontSize="xs" color="red.400" fontWeight="600">
-                    No data found matching "{modalSearch}"
+                    No data found matching {modalSearch}
                   </Text>
                 </Box>
               ) : (

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Box,
   Button,
@@ -6,7 +5,6 @@ import {
   Text,
   Heading,
   Flex,
-  HStack,
   useColorModeValue,
 } from "@chakra-ui/react";
 import PropTypes from "prop-types";

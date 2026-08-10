@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   Flex,
@@ -257,6 +257,9 @@ const Message = ({
     "pulse.lightSubtext",
     "pulse.darkSubtext",
   );
+  const actionBorderColor = useColorModeValue("gray.300", "whiteAlpha.200");
+  const replyPreviewBg = useColorModeValue("blue.50", "whiteAlpha.100");
+  const reactionBadgeBg = useColorModeValue("white", "#1e293b");
 
   const textColorMe = "#ffffff";
   const textColorOther = useColorModeValue("#0f172a", "#f8fafc");
@@ -438,7 +441,7 @@ const Message = ({
           left={isMe ? "50px" : "auto"}
           bg={hoverActionBg}
           border="1px solid"
-          borderColor={useColorModeValue("gray.300", "whiteAlpha.200")}
+          borderColor={actionBorderColor}
           borderRadius="full"
           px={2}
           py={0.5}
@@ -523,6 +526,8 @@ const Message = ({
           transition="transform 0.15s ease"
           onClick={handleBubbleClick}
           cursor="pointer"
+          display="flex"
+          flexDirection="column"
           sx={{
             wordBreak: "break-word",
           }}
@@ -544,9 +549,7 @@ const Message = ({
           {replyTo && (
             <Box
               bg={
-                isMe
-                  ? "whiteAlpha.200"
-                  : useColorModeValue("blue.50", "whiteAlpha.100")
+                isMe ? "whiteAlpha.200" : replyPreviewBg
               }
               borderLeft="3px solid"
               borderLeftColor={isMe ? "white" : "#2563eb"}
@@ -654,7 +657,6 @@ const Message = ({
               fontSize="sm"
               lineHeight="1.5"
               whiteSpace="pre-wrap"
-              pr={isMe ? "50px" : "44px"}
               fontWeight="500"
               mt={mediaUrl ? 1.5 : 0}
             >
@@ -664,9 +666,8 @@ const Message = ({
 
           {/* Timestamp & Read Receipt */}
           <HStack
-            pos="absolute"
-            right={3}
-            bottom={1.5}
+            mt={1.5}
+            alignSelf="flex-end"
             spacing={1}
             align="center"
           >
@@ -697,7 +698,7 @@ const Message = ({
                   bg={
                     hasReacted
                       ? "blue.500"
-                      : useColorModeValue("white", "#1e293b")
+                      : reactionBadgeBg
                   }
                   color={hasReacted ? "white" : textColorOther}
                   border="1px solid"
