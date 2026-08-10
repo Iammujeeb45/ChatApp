@@ -232,6 +232,7 @@ const Message = ({
   onDeleteForEveryone = () => {},
   onReply = () => {},
   onToggleReaction = () => {},
+  isPending = false,
 }) => {
   const isMe = user === "me";
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -433,7 +434,7 @@ const Message = ({
       )}
 
       {/* Action Bar (Mouse Hover + Mobile Touch Tap) */}
-      {!isSelectMode && (
+      {!isSelectMode && !isPending && (
         <HStack
           pos="absolute"
           top="-22px"
@@ -508,6 +509,7 @@ const Message = ({
         align={isMe ? "flex-end" : "flex-start"}
         spacing={1}
         maxW={{ base: "88%", sm: "78%", md: "68%" }}
+        opacity={isPending ? 0.75 : 1}
       >
         <Box
           w="full"
@@ -524,8 +526,8 @@ const Message = ({
           }
           pos="relative"
           transition="transform 0.15s ease"
-          onClick={handleBubbleClick}
-          cursor="pointer"
+          onClick={isPending ? undefined : handleBubbleClick}
+          cursor={isPending ? "default" : "pointer"}
           display="flex"
           flexDirection="column"
           sx={{
@@ -677,16 +679,16 @@ const Message = ({
               color={isMe ? timestampColorMe : timestampColorOther}
               userSelect="none"
             >
-              {formatTime(createdAt)}
+              {isPending ? "Sending..." : formatTime(createdAt)}
             </Text>
-            {isMe && (
+            {isMe && !isPending && (
               <DoubleCheckIcon isRead={true} boxSize="14px" color="#ffffff" />
             )}
           </HStack>
         </Box>
 
         {/* Interactive Reaction Pills under message bubble */}
-        {activeReactions.length > 0 && (
+          {activeReactions.length > 0 && !isPending && (
           <HStack spacing={1} pt={0.5}>
             {activeReactions.map(([emoji, uids]) => {
               const hasReacted = uids.includes(currentUid);
@@ -758,6 +760,7 @@ Message.propTypes = {
   onDeleteForEveryone: PropTypes.func,
   onReply: PropTypes.func,
   onToggleReaction: PropTypes.func,
+  isPending: PropTypes.bool,
 };
 
 export default Message;

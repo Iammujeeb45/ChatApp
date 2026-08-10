@@ -7,8 +7,10 @@ import {
   AvatarBadge,
   Text,
   IconButton,
+  Box,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   Input,
   Menu,
   MenuButton,
@@ -148,48 +150,6 @@ const Header = ({
           <Text fontSize="xs" color={subtextColor}>
             {activeRoom?.isDM ? "online" : `${messageCount} messages`}
           </Text>
-          <InputGroup
-            size="sm"
-            mt={1.5}
-            maxW={{ base: "180px", sm: "240px", md: "280px" }}
-            minW={0}
-          >
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color={subtextColor} />
-            </InputLeftElement>
-            <Input
-              placeholder="Search chat..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              bg={inputBg}
-              border="1px solid"
-              borderColor={inputBorder}
-              borderRadius="full"
-              color={textColor}
-              fontSize="xs"
-              h="32px"
-              _placeholder={{ color: subtextColor }}
-              _focus={{
-                bg: inputBg,
-                borderColor: "#8b5cf6",
-                boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)",
-              }}
-            />
-            {searchQuery && (
-              <IconButton
-                size="xs"
-                aria-label="Clear search"
-                icon={<CloseIcon />}
-                variant="ghost"
-                onClick={() => onSearchChange("")}
-                pos="absolute"
-                right="4px"
-                top="50%"
-                transform="translateY(-50%)"
-                zIndex="2"
-              />
-            )}
-          </InputGroup>
         </VStack>
       </HStack>
 
@@ -261,6 +221,44 @@ const Header = ({
               Logged in as <strong>&nbsp;{user?.displayName || user?.email}</strong>
             </MenuItem>
             <MenuDivider borderColor={headerBorder} />
+
+            <Box px={1} pb={2}>
+              <InputGroup size="sm">
+                <InputLeftElement pointerEvents="none">
+                  <SearchIcon color={subtextColor} />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search chat..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  bg={inputBg}
+                  border="1px solid"
+                  borderColor={inputBorder}
+                  borderRadius="full"
+                  color={textColor}
+                  fontSize="xs"
+                  h="32px"
+                  _placeholder={{ color: subtextColor }}
+                  _focus={{
+                    bg: inputBg,
+                    borderColor: "#8b5cf6",
+                    boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.3)",
+                  }}
+                />
+                {searchQuery && (
+                  <InputRightElement>
+                    <IconButton
+                      size="xs"
+                      aria-label="Clear search"
+                      icon={<CloseIcon />}
+                      variant="ghost"
+                      onClick={() => onSearchChange("")}
+                    />
+                  </InputRightElement>
+                )}
+              </InputGroup>
+            </Box>
+
             <MenuItem
               icon={<SelectIcon color="#8b5cf6" />}
               onClick={onToggleSelectMode}

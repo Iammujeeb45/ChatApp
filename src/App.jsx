@@ -24,6 +24,7 @@ import Header from "./Components/Header";
 import Sidebar from "./Components/Sidebar";
 import ChatInput from "./Components/ChatInput";
 import AuthScreen from "./Components/AuthScreen";
+import MediaPreviewModal from "./Components/MediaPreviewModal";
 import VideoCallModal from "./Components/VideoCallModal";
 import {
   DownChevronIcon,
@@ -250,6 +251,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [pendingMessages, setPendingMessages] = useState([]);
+  const [pendingMedia, setPendingMedia] = useState(null);
+  const [mediaPreviewOpen, setMediaPreviewOpen] = useState(false);
 
   // Quoted Message Reply State
   const [replyingToMessage, setReplyingToMessage] = useState(null);
@@ -398,6 +402,28 @@ function App() {
     setReplyingToMessage(null);
   };
 
+  const handlePickMedia = ({ file, mediaType, mediaName }) => {
+    if (!file || !mediaType) return;
+
+    const mediaPreviewUrl = URL.createObjectURL(file);
+    setPendingMedia({
+      file,
+      mediaType,
+      mediaName,
+      mediaPreviewUrl,
+    });
+    setMediaPreviewOpen(true);
+    setMessage("");
+  };
+
+  const handleCloseMediaPreview = () => {
+    if (pendingMedia?.mediaPreviewUrl) {
+      URL.revokeObjectURL(pendingMedia.mediaPreviewUrl);
+    }
+    setPendingMedia(null);
+    setMediaPreviewOpen(false);
+  };
+
   // Send Text Message
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -480,6 +506,83 @@ function App() {
     } catch (error) {
       alert("Failed to send media: " + error.message);
     }
+  };
+
+  const handleConfirmPendingMedia = async (caption) => {
+    if (!pendingMedia || !user || !activeRoom) return;
+
+    const mediaPayload = pendingMedia;
+    const currentReplyPayload = replyingToMessage;
+    const tempId = `pending_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    setPendingMessages((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        roomId: activeRoom.id,
+        uid: user.uid,
+        uri: userPhoto,
+        displayName: user.displayName || user.email?.split("@")[0] || "User",
+        text: caption || "",
+        caption: caption || "",
+        mediaUrl: mediaPayload.mediaPreviewUrl,
+        mediaType: mediaPayload.mediaType,
+        mediaName: mediaPayload.mediaName,
+        createdAt: new Date(),
+        isPending: true,
+      },
+    ]);
+
+    setReplyingToMessage(null);
+    handleCloseMediaPreview();
+    if (soundEnabled) {
+      playSendSound();
+    }
+
+    (async () => {
+      try {
+        const uploadedMedia = await uploadMediaToStorage({
+          roomId: activeRoom.id,
+          uid: user.uid,
+          file: mediaPayload.file,
+          mediaType: mediaPayload.mediaType,
+          mediaName: mediaPayload.mediaName,
+        });
+
+        await addDoc(collection(db, "Message"), {
+          text: caption || "",
+          caption: caption || "",
+          mediaUrl: uploadedMedia.url,
+          mediaType: mediaPayload.mediaType,
+          mediaName: mediaPayload.mediaName,
+          storagePath: uploadedMedia.storagePath,
+          uid: user.uid,
+          uri: userPhoto,
+          displayName: user.displayName || user.email?.split("@")[0] || "User",
+          roomId: activeRoom.id,
+          replyTo: currentReplyPayload,
+          reactions: {},
+          createdAt: serverTimestamp(),
+        });
+
+        setPendingMessages((prev) => prev.filter((m) => m.id !== tempId));
+        scrollToBottom();
+      } catch (error) {
+        console.error("Failed to send media:", error);
+        setPendingMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId ? { ...m, isPending: false, sendError: true } : m,
+          ),
+        );
+        toast({
+          title: "Failed to send media",
+          description: error.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    })();
   };
 
   // Toggle Emoji Reaction in Firestore
@@ -742,6 +845,10 @@ function App() {
         (m.mediaName || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+  const visiblePendingMessages = pendingMessages.filter(
+    (m) => m.roomId === activeRoom?.id,
+  );
+
   useEffect(() => {
     if (!activeRoom) return;
     const timer = setTimeout(scrollToBottom, 100);
@@ -999,7 +1106,7 @@ function App() {
                       </Box>
                     </Flex>
                   ) : (
-                    filteredVisibleMessages.map((item) => (
+                    [...filteredVisibleMessages, ...visiblePendingMessages].map((item) => (
                       <Message
                         key={item.id}
                         id={item.id}
@@ -1023,6 +1130,7 @@ function App() {
                         onDeleteForEveryone={handleDeleteForEveryone}
                         onReply={setReplyingToMessage}
                         onToggleReaction={handleToggleReaction}
+                        isPending={item.isPending}
                       />
                     ))
                   )}
@@ -1057,6 +1165,7 @@ function App() {
                   setMessage={setMessage}
                   onSendMessage={submitHandler}
                   onSendMediaMessage={sendMediaHandler}
+                  onPickMedia={handlePickMedia}
                   replyingTo={replyingToMessage}
                   onCancelReply={() => setReplyingToMessage(null)}
                 />
@@ -1065,6 +1174,18 @@ function App() {
           </Box>
         </Flex>
       </Container>
+
+      <MediaPreviewModal
+        isOpen={mediaPreviewOpen}
+        onClose={handleCloseMediaPreview}
+        file={pendingMedia?.file}
+        mediaType={pendingMedia?.mediaType}
+        mediaPreviewUrl={pendingMedia?.mediaPreviewUrl || ""}
+        initialCaption=""
+        onSendMedia={handleConfirmPendingMedia}
+        uploadProgress={0}
+        isUploading={false}
+      />
     </Flex>
   );
 }

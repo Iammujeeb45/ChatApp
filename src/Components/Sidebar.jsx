@@ -174,9 +174,6 @@ const Sidebar = ({
                           <Text fontWeight="600" fontSize="sm" color={textColor} noOfLines={1}>
                             {member.displayName || "Pulse Member"}
                           </Text>
-                          <Text fontSize="xs" color={subtextColor} noOfLines={1}>
-                            {member.email}
-                          </Text>
                         </VStack>
                       </HStack>
                     </Box>
@@ -371,9 +368,6 @@ const Sidebar = ({
                   <VStack align="start" spacing={0} flex={1}>
                     <Text fontWeight="600" fontSize="sm" color={textColor} noOfLines={1}>
                       {member.displayName || "Pulse Member"}
-                    </Text>
-                    <Text fontSize="xs" color={subtextColor} noOfLines={1}>
-                      {member.email}
                     </Text>
                   </VStack>
                 </HStack>

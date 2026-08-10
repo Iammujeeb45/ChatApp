@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import {
   Modal,
@@ -25,6 +25,7 @@ const MediaPreviewModal = ({
   file,
   mediaType,
   mediaPreviewUrl,
+  initialCaption = "",
   onSendMedia,
   uploadProgress,
   isUploading,
@@ -33,6 +34,12 @@ const MediaPreviewModal = ({
 
   const modalBg = useColorModeValue("#ffffff", "#1e293b");
   const textColor = useColorModeValue("pulse.lightText", "pulse.darkText");
+
+  useEffect(() => {
+    if (isOpen) {
+      setCaption(initialCaption || "");
+    }
+  }, [initialCaption, isOpen]);
 
   const handleSend = () => {
     onSendMedia(caption);
@@ -168,6 +175,7 @@ MediaPreviewModal.propTypes = {
   file: PropTypes.object,
   mediaType: PropTypes.string,
   mediaPreviewUrl: PropTypes.string,
+  initialCaption: PropTypes.string,
   onSendMedia: PropTypes.func.isRequired,
   uploadProgress: PropTypes.number,
   isUploading: PropTypes.bool,

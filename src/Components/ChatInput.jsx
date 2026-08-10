@@ -18,7 +18,6 @@ import PropTypes from "prop-types";
 import {
   SendIcon,
   PaperclipIcon,
-  ImageIcon,
   VideoIcon,
   MicIcon,
   TrashIcon,
@@ -31,6 +30,7 @@ const ChatInput = ({
   setMessage,
   onSendMessage,
   onSendMediaMessage,
+  onPickMedia,
   replyingTo,
   onCancelReply,
 }) => {
@@ -40,7 +40,6 @@ const ChatInput = ({
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
-  const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
 
   const inputBg = useColorModeValue("pulse.lightInputBg", "pulse.darkInputBg");
@@ -145,6 +144,17 @@ const ChatInput = ({
       return;
     }
 
+    if (onPickMedia) {
+      onPickMedia({
+        file,
+        mediaType,
+        mediaName: file.name,
+      });
+      setMessage("");
+      e.target.value = "";
+      return;
+    }
+
     onSendMediaMessage({
       file,
       mediaType: mediaType,
@@ -158,13 +168,6 @@ const ChatInput = ({
   return (
     <Box w="full" px={4} pb={4} pt={2} zIndex="5">
       {/* Hidden File Inputs */}
-      <input
-        type="file"
-        ref={imageInputRef}
-        accept="image/*"
-        style={{ display: "none" }}
-        onChange={(e) => handleFileSelect(e, "image")}
-      />
       <input
         type="file"
         ref={videoInputRef}
@@ -307,14 +310,6 @@ const ChatInput = ({
             />
             <MenuList bg={menuListBg} borderColor={borderColor} p={2}>
               <MenuItem
-                icon={<ImageIcon color="#0284c7" />}
-                onClick={() => imageInputRef.current?.click()}
-                fontSize="xs"
-                borderRadius="md"
-              >
-                Upload Image
-              </MenuItem>
-              <MenuItem
                 icon={<VideoIcon color="#7c3aed" />}
                 onClick={() => videoInputRef.current?.click()}
                 fontSize="xs"
@@ -384,6 +379,7 @@ ChatInput.propTypes = {
   setMessage: PropTypes.func.isRequired,
   onSendMessage: PropTypes.func.isRequired,
   onSendMediaMessage: PropTypes.func.isRequired,
+  onPickMedia: PropTypes.func,
   replyingTo: PropTypes.object,
   onCancelReply: PropTypes.func,
 };
